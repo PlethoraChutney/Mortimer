@@ -64,7 +64,7 @@ class Database(object):
         if session_dict is None:
             return []
         else:
-            return list(session_dict.keys())
+            return [x for x in session_dict.keys() if x not in ['_id', '_rev']]
 
     def new_session(self, name:str, path:str) -> None:
         sessions = self.sessions_db.get('sessions')
@@ -80,15 +80,25 @@ class Database(object):
             info = info[info['Screening Grid Number'].notna()]
             info = info.astype({'Screening Grid Number': 'int32'})
             info = info.set_index('Screening Grid Number')
-            sessions[name]['grid_info'] = info.to_json(orient = 'index')
+            info.fillna('', inplace=True)
+            info = info.to_dict(orient = 'index')
+            sessions[name]['grid_info'] = info
         except FileNotFoundError:
             logging.warning('No grid info found in session root.')
+
+        self.sessions_db['sessions'] = sessions
+
+    def delete_session(self, session):
+        session_dict = self.sessions_db.get('sessions')
+        session_dict.pop(session)
+        self.sessions_db['sessions'] = session_dict
         
 
 class Processor(object):
     def __init__(self, path:str, db:Database) -> None:
         self.path = os.path.normpath(path)
-        self.name = os.path.split(path)[1]
+        self.name = os.path.split(self.path[:-1])[1]
+
         self._grids = glob.glob(f'{self.path}/grid*')
         self.db = db
 
@@ -214,6 +224,9 @@ def utilities(args):
     if args.list_sessions:
         print('Sessions:', *db.sessions, sep = '\n  ')
 
+    if args.delete_session:
+        db.delete_session(args.delete_session)
+
 def process_session(args):
     db = Database()
 
@@ -266,6 +279,10 @@ utils.add_argument(
     '--list-sessions',
     help = 'Which sessions currently available',
     action = 'store_true'
+)
+utils.add_argument(
+    '--delete-session',
+    help = 'Remove session from mortimer by name'
 )
 
 if __name__ == "__main__":
