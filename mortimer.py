@@ -15,9 +15,12 @@ import time
 test_dir = '/goliath/rawdata/BaconguisLab/posert/Screening-20220617/'
 
 alignframes = shutil.which('alignframes')
+edmont = shutil.which('edmont')
+blendmont = shutil.which('blendmont')
+extractpieces = shutil.which('extractpieces')
 
-if alignframes is None:
-    logging.error('dm2mrc or alignframes not found in $PATH. Exiting.')
+if any(x is None for x in [alignframes, edmont, blendmont, extractpieces]):
+    logging.error('IMOD not in $PATH. Exiting.')
     sys.exit(1)
 
 def process_tif(tif_path):
@@ -97,6 +100,78 @@ class Processor(object):
         self._grids = glob.glob(f'{self.path}/grid*')
         return self._grids
 
+    def find_new_montages(self):
+        all_monts = []
+        for grid in self.grids:
+            if os.path.exists(f'{grid}/lmm.mrc') and not os.path.exists(f'{grid}/aligned-lmm.mrc'):
+                all_monts.append(f'{grid}/lmm.mrc')
+
+        return all_monts
+    
+    # montaging code stolen from Hotspur
+    def bin_montage_stack(self, mont):
+        base, filename = os.path.split(mont)
+        command = ' '.join([
+            edmont,
+            f'-imin {mont}',
+            f'-imout {base + "/binned-" + filename}',
+            '-mdoc',
+            '-bin 4'
+        ])
+        logging.info(f'Binning montage for {os.path.split(base)[1]}')
+        try:
+            output = subprocess.run(command, shell=True, capture_output = True, check = True)
+        except subprocess.CalledProcessError as e:
+            logging.error('Subprocess exited with error during montage alignment:')
+            logging.error(e.stderr)
+            sys.exit(1)
+
+    def extract_coords(self, mont):
+        base, filename = os.path.split(mont)
+        command = ' '.join([
+            extractpieces,
+            f'-input {base + "/binned-" + filename}',
+            f'-output {mont[:-4] + ".coords"}'
+        ])
+        logging.info(f'Extracting coordinates for {os.path.split(base)[1]}')
+        try:
+            output = subprocess.run(command, shell = True, capture_output = True, check = True)
+        except subprocess.CalledProcessError as e:
+            logging.error('Subprocess exited with error during montage alignment:')
+            logging.error(e.stderr)
+            sys.exit(1)
+
+    def blend_montage(self, mont):
+        base, filename = os.path.split(mont)
+        command = ' '.join([
+            blendmont,
+            f'-imin {base + "/binned-" + filename}',
+            f'-imout {base + "/aligned-" + filename}',
+            f'-plin {mont[:-4] + ".coords"}',
+            f'-roo {base + "/aligned-" + filename}',
+            '-sl -nofft'
+        ])
+        logging.info(f'Blending montage for {os.path.split(base)[1]}')
+        logging.debug(f'Command: {command}')
+        try:
+            output = subprocess.run(command, shell = True, check = True)
+        except subprocess.CalledProcessError as e:
+            logging.error('Subprocess exited with error during montage alignment:')
+            logging.error(e.stderr)
+            sys.exit(1)
+
+    def preview_montage(self, mont):
+        base, filename = os.path.split(mont)
+        with mrcfile.open(f'{base}/aligned-{filename}') as f:
+            mont_image = f.data
+
+        mont_image = skimage.exposure.equalize_adapthist(mont_image, clip_limit = 0.03)
+        mont_image = skimage.img_as_ubyte(mont_image)
+        skimage.io.imsave(mont.replace('.mrc', '.png'), mont_image)
+        logging.info('Saved PNG')
+        
+
+
     def find_new_files(self):
         all_tifs = []
         for grid in self.grids:
@@ -111,15 +186,25 @@ class Processor(object):
         return tifs_to_process
 
     def process_files(self):
-        need_processing = self.find_new_files()
 
         while True:
+
+            new_montages = self.find_new_montages()
+            while new_montages:
+                mont_to_process = new_montages.pop()
+                self.bin_montage_stack(mont_to_process)
+                self.extract_coords(mont_to_process)
+                self.blend_montage(mont_to_process)
+                self.preview_montage(mont_to_process)
+
+            need_processing = self.find_new_files()
+
             while need_processing:
                 tif_to_process = need_processing.pop()
                 process_tif(tif_to_process)
             
             need_processing = self.find_new_files()
-            if not need_processing:
+            if not need_processing and not new_montages:
                 logging.info('No new files detected. Waiting 10 seconds.')
                 time.sleep(10)
 
