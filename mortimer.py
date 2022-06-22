@@ -8,7 +8,7 @@ import argparse
 import glob
 import subprocess
 import mrcfile
-import numpy as np
+import pandas as pd
 import skimage
 import time
 
@@ -71,6 +71,16 @@ class Database(object):
         sessions[name] = {
             'path': path
         }
+
+        try:
+            info = pd.read_csv(f'{path}/grid_info.csv')
+            info = info[info['Screening Grid Number'].notna()]
+            info = info.astype({'Screening Grid Number': 'int32'})
+            info = info.set_index('Screening Grid Number')
+            sessions[name]['grid_info'] = info.to_json(orient = 'index')
+        except FileNotFoundError:
+            logging.warning('No grid info found in session root.')
+        
 
 class Processor(object):
     def __init__(self, path:str, db:Database) -> None:
