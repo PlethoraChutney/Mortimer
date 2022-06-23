@@ -10,6 +10,7 @@ import subprocess
 import mrcfile
 import pandas as pd
 import skimage
+import numpy as np
 import time
 
 test_dir = '/goliath/rawdata/BaconguisLab/posert/Screening-20220617/'
@@ -41,7 +42,9 @@ def process_tif(tif_path):
         (aligned.shape[0] // 10, aligned.shape[1] // 10),
         anti_aliasing = True
     )
-    aligned = skimage.exposure.equalize_adapthist(aligned, clip_limit = 0.03)
+    p2, p98 = np.percentile(aligned, (2, 98))
+    aligned = skimage.exposure.rescale_intensity(aligned, in_range=(p2, p98))
+
     aligned = skimage.img_as_ubyte(aligned)
     skimage.io.imsave(outfile.replace('mrc', 'png'), aligned)
     logging.info('Saved PNG')
@@ -97,7 +100,9 @@ class Database(object):
 class Processor(object):
     def __init__(self, path:str, db:Database) -> None:
         self.path = os.path.normpath(path)
-        self.name = os.path.split(self.path[:-1])[1]
+        if path[-1] == '/':
+            path = path[:-1]
+        self.name = os.path.split(path)[1]
 
         self._grids = glob.glob(f'{self.path}/grid*')
         self.db = db

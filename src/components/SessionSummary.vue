@@ -29,6 +29,7 @@ div.session {
     grid-template-rows: 1fr;
     grid-template-areas: "name info";
     cursor: pointer;
+    margin-bottom: 3rem;
 }
 
 div.session > h3 {
