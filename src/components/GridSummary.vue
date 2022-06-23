@@ -57,7 +57,7 @@ export default {
     },
     computed: {
         lowmag() {
-            return `/image${this.path}/grid${this.name}/lmm.png`
+            return `/mortimer/image${this.path}/grid${this.name}/lmm.png`
         }
     }
 }

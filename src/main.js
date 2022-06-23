@@ -4,7 +4,7 @@ import router from './router'
 
 import { store } from '@/store'
 
-function sendRequest(body, dest = '/api') {
+function sendRequest(body, dest = '/mortimer/api') {
     return fetch(dest, {
         method: 'POST',
         mode: 'cors',

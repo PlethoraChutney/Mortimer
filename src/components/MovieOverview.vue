@@ -57,7 +57,7 @@
 <script>
 import { store } from '@/store'
 
-function sendRequest(body, dest = '/api') {
+function sendRequest(body, dest = '/mortimer/api') {
     return fetch(dest, {
         method: 'POST',
         mode: 'cors',
@@ -86,10 +86,10 @@ export default {
     created() {
         try {
             this.path = this.store['sessions'][this.$route.params.session]['path'];
-            this.lowmag = `/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
+            this.lowmag = `/mortimer/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
             this.info = this.store['sessions'][this.$route.params.session]['grid_info'][this.$route.params.grid];
         } catch (err) {
-            console.log('Not loaded yet');
+            this.path = '';
         }
 
         this.getNewImages();
@@ -98,7 +98,7 @@ export default {
         store: {
             handler(newValue) {
                 this.path = newValue['sessions'][this.$route.params.session]['path'];
-                this.lowmag = `/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
+                this.lowmag = `/mortimer/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
                 this.info = newValue['sessions'][this.$route.params.session]['grid_info'][this.$route.params.grid];
                 this.getNewImages();
             },

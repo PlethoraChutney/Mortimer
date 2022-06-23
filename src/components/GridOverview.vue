@@ -38,7 +38,7 @@ export default {
         this.grids = this.store['sessions'][this.session]['grid_info'];
         this.path = this.store['sessions'][this.session]['path'];
       } catch(err) {
-        console.log('Not loaded yet');
+        this.path = ''
       }
     },
     watch: {

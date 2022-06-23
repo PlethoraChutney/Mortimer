@@ -42,11 +42,11 @@ app = Flask(
 
 db = Database()
 
-@app.route('/', methods = ['GET'])
+@app.route('/mortimer/', methods = ['GET'])
 def index():
     return render_template('index.html')
 
-@app.route('/api', methods = ['POST'])
+@app.route('/mortimer/api', methods = ['POST'])
 def api():
     rj = request.get_json()
 
@@ -75,7 +75,7 @@ def api():
         db.move_grid(rj['session'], rj['grid'], rj['location'])
         return 'OK', 200
 
-@app.route('/image/<path:image_path>', methods = ['GET'])
+@app.route('/mortimer/image/<path:image_path>', methods = ['GET'])
 def image(image_path):
     if image_path[-4:] == '.png':
         image_path = image_path.replace('goliath/rawdata/BaconguisLab/', '')
