@@ -1,6 +1,6 @@
 import os
-import logging
 import couchdb
+import glob
 from flask import Flask, render_template, request, send_from_directory
 import json
 
@@ -49,6 +49,15 @@ def api():
             del sessions['_rev']
         
         return json.dumps({'sessions': sessions}), 200, {'ContentType': 'application/json'}
+    elif rj['action'] == 'check_images':
+        path = rj['path'].replace('/image', '')
+        if not path or not os.path.exists(path):
+            image_paths = []
+        else:
+            image_paths = glob.glob(f'{path}/grid{rj["grid"]}/aligned_*.png')
+            image_paths = ['/image' + x for x in image_paths]
+
+        return json.dumps({'image_paths': image_paths}), 200, {'ContentType': 'application/json'}
 
 @app.route('/image/<path:image_path>', methods = ['GET'])
 def image(image_path):
