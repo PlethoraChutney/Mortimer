@@ -25,15 +25,28 @@ export default {
         "session": String
     },
     data() {
-        return {store};
+        return {
+          store,
+          grids: {},
+          path: ''
+        };
     },
-    computed: {
-        grids() {
-            return this.store['sessions'][this.session]['grid_info'];
+    created() {
+      try {
+        this.grids = this.store['sessions'][this.session]['grid_info'];
+        this.path = this.store['sessions'][this.session]['path'];
+      } catch(err) {
+        console.log('Not loaded yet');
+      }
+    },
+    watch: {
+      store: {
+        handler(newValue) {
+          this.grids = newValue['sessions'][this.session]['grid_info'];
+          this.path = newValue['sessions'][this.session]['path'];
         },
-        path() {
-            return this.store['sessions'][this.session]['path'];
-        }
+        deep: true
+      }
     },
     components: { GridSummary }
 }

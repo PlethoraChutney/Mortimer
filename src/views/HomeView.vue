@@ -36,9 +36,6 @@ export default {
       store
     }
   },
-  created() {
-    this.getSessions();
-  },
   methods: {
     getSessions() {
       sendRequest({'action': 'get_sessions'}).then(
