@@ -29,6 +29,11 @@ class Database(object):
         session_dict[session]['grid_info'][grid]['State'] = state
         self.sessions_db['sessions'] = session_dict
 
+    def move_grid(self, session, grid, new_location):
+        session_dict = self.sessions_db.get('sessions')
+        session_dict[session]['grid_info'][grid]['Moved To'] = new_location
+        self.sessions_db['sessions'] = session_dict
+
 app = Flask(
     __name__,
     static_folder=os.path.join('dist', 'static'),
@@ -65,6 +70,9 @@ def api():
         return json.dumps({'image_paths': image_paths}), 200, {'ContentType': 'application/json'}
     elif rj['action'] == 'mark_grid':
         db.mark_grid(rj['session'], rj['grid'], rj['state'])
+        return 'OK', 200
+    elif rj['action'] == 'move_grid':
+        db.move_grid(rj['session'], rj['grid'], rj['location'])
         return 'OK', 200
 
 @app.route('/image/<path:image_path>', methods = ['GET'])

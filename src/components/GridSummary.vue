@@ -30,6 +30,11 @@
                 <p>Notes</p>
                 <p>{{grid['Notes']}}</p>
             </div>
+            <div
+            v-if="grid['Moved To']">
+                <p>Moved To</p>
+                <p>{{grid['Moved To']}}</p>
+            </div>
         </div>
         <img :src="lowmag">
     </div>

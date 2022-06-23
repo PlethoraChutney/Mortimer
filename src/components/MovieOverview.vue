@@ -35,6 +35,14 @@
                 <p>{{param}}</p>
                 <p>{{this.info[param]}}</p>
             </div>
+            <div>
+                <div
+                class="button"
+                @click="moveGrid()"
+                >
+                    Move Grid
+                </div>
+            </div>
         </div>
 
         <div class="movies">
@@ -120,6 +128,17 @@ export default {
             })
 
             this.store.sessions[this.$route.params.session]['grid_info'][this.$route.params.grid]['State'] = newState;
+        },
+        moveGrid() {
+            const newLocation = prompt('Move grid where?');
+            sendRequest({
+                'action': 'move_grid',
+                'session': this.$route.params.session,
+                'grid': this.$route.params.grid,
+                'location': newLocation
+            })
+
+            this.store.sessions[this.$route.params.session]['grid_info'][this.$route.params.grid]['Moved To'] = newLocation;
         }
     }
 }
