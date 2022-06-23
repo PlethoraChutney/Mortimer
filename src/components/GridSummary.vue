@@ -3,16 +3,23 @@
 :to="{name: 'gridView', params: {session: session, grid: name}}"
 >
     <div class="grid">
-        <h2>Grid {{name}}</h2>
-        <div class="top container">
+        <div id="grid-name">
+            <h2>Grid {{name}}</h2>
+            <div
+            v-if="grid['State']"
+            class="state"
+            :class="grid['State']"
+            >
+                {{this.grid['State']}}
+            </div>
+        </div>
+        <div class="container">
             <div>
                 <p>Box</p><p>{{grid['Box Name']}} {{grid['Box Position']}}</p>
             </div>
             <div>
                 <p>Protein</p><p>{{grid['Protein']}} fraction {{grid['Fraction']}}, {{grid['Concentration']}} A<sub>280</sub></p>
             </div>
-        </div>
-        <div class="bottom container">
             <div>
                 <p>Grid type</p><p>{{grid['Mesh']}} mesh {{grid['Grid Type']}}</p>
             </div>
@@ -61,29 +68,34 @@ div.grid {
     width: 90%;
     margin: 1.5rem auto;
     grid-template-columns: 20% 1fr 480px;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas: "name info1 lmm" "name info2 lmm";
     cursor: pointer;
 }
 
-div.grid > h2 {
+#grid-name {
     grid-area: name;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     margin: auto;
+    height: max-content;
+}
+
+#grid-name > h2 {
     font-size: 48pt;
 }
 
 div.grid p {
-    margin-left: 2rem;
-}
-div.top {
-    grid-area: info1;
+    margin: 0;
 }
 
 div.container {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     justify-content: center;
     align-items: center;
+    margin-top: 20px;
 }
 
 div.container > div {
@@ -99,10 +111,6 @@ div.container > div > p:first-child {
     border-bottom: 1px solid #2f2f2f;
 }
 
-div.bottom {
-    grid-area: info2;
-}
-
 div.grid > img {
     grid-area: lmm;
     width: 480px;
@@ -112,5 +120,25 @@ p {
     padding: 0;
     margin: 0;
     font-size: 18pt;
+}
+
+div.state {
+    padding: 10px;
+    width: max-content;
+    margin: auto;
+    border: 1px solid white;
+}
+
+div.state.Collect {
+    background-color: #E0C960;
+    color: black;
+}
+
+div.state.Keep {
+    background-color: #6063E0;
+}
+
+div.state.Toss {
+    background-color: black;
 }
 </style>

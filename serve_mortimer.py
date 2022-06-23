@@ -24,6 +24,11 @@ class Database(object):
         else:
             return list(session_dict.keys())
 
+    def mark_grid(self, session, grid, state):
+        session_dict = self.sessions_db.get('sessions')
+        session_dict[session]['grid_info'][grid]['State'] = state
+        self.sessions_db['sessions'] = session_dict
+
 app = Flask(
     __name__,
     static_folder=os.path.join('dist', 'static'),
@@ -58,6 +63,9 @@ def api():
             image_paths = ['/image' + x for x in image_paths]
 
         return json.dumps({'image_paths': image_paths}), 200, {'ContentType': 'application/json'}
+    elif rj['action'] == 'mark_grid':
+        db.mark_grid(rj['session'], rj['grid'], rj['state'])
+        return 'OK', 200
 
 @app.route('/image/<path:image_path>', methods = ['GET'])
 def image(image_path):

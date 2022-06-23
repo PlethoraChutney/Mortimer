@@ -5,6 +5,24 @@
             :to="{name: 'sessionView', params: {session: this.$route.params.session}}"
             >&larr;</router-link>
             <h2>{{this.$route.params.session}} - Grid {{this.$route.params.grid}}</h2>
+            <div 
+            class="button"
+            @click="markGrid('Collect')"
+            :class="{'greyed-out': ['Keep', 'Toss'].includes(this.info['State'])}"
+            style="background-color: #E0C960; color: black;"
+            >Collect</div>
+            <div 
+            class="button"
+            @click="markGrid('Keep')"
+            :class="{'greyed-out': ['Collect', 'Toss'].includes(this.info['State'])}"
+            style="background-color: #6063E0;"
+            >Keep</div>
+            <div 
+            class="button"
+            @click="markGrid('Toss')"
+            :class="{'greyed-out': ['Collect', 'Keep'].includes(this.info['State'])}"
+            style="background-color: black;"
+            >Toss</div>
         </div>
 
         <img :src="lowmag" alt="" class="lmm">
@@ -92,6 +110,16 @@ export default {
                     this.imagePaths = data.image_paths;
                 }
             )
+        },
+        markGrid(newState) {
+            sendRequest({
+                'action': 'mark_grid',
+                'session': this.$route.params.session,
+                'grid': this.$route.params.grid,
+                'state': newState
+            })
+
+            this.store.sessions[this.$route.params.session]['grid_info'][this.$route.params.grid]['State'] = newState;
         }
     }
 }
@@ -116,6 +144,17 @@ div.page-view {
   justify-content: flex-start;
   align-items: center;
   border-bottom: 1px solid #2f2f2f;
+}
+
+div.button {
+    padding: 10px;
+    margin-left: 20px;
+    border: 1px solid white;
+    cursor: pointer;
+}
+
+div.button.greyed-out {
+    opacity: 0.25;
 }
 
 .header > h2 {
