@@ -65,7 +65,7 @@ def api():
             image_paths = []
         else:
             image_paths = glob.glob(f'{path}/grid{rj["grid"]}/aligned_*.png')
-            image_paths = ['/image' + x for x in image_paths]
+            image_paths = ['/mortimer/image' + x for x in image_paths]
 
         return json.dumps({'image_paths': image_paths}), 200, {'ContentType': 'application/json'}
     elif rj['action'] == 'mark_grid':
