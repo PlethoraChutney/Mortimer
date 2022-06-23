@@ -20,7 +20,8 @@ export default {
 <style scoped>
 div.session {
     display: grid;
-    background-color: #3F3F3F;
+    border: 1px solid #2f2f2f;
+    padding: 10px;
     min-height: 10rem;
     height: max-content;
     width: 100%;
@@ -33,10 +34,12 @@ div.session {
 div.session > h3 {
     grid-area: name;
     margin: auto;
+    font-size: 48pt;
 }
 
 div.session > p {
     grid-area: info;
     margin: auto;
+    font-size: 18pt;
 }
 </style>

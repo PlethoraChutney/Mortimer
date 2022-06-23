@@ -1,6 +1,7 @@
 <template>
   <div class="page-view">
     <div class="header">
+      <router-link to="/">&larr;</router-link>
       <h1>{{session}}</h1>
     </div>
     <div class="grids">
@@ -66,6 +67,16 @@ div.page-view {
 
 .header {
   grid-area: header;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.header > a {
+  font-size: 64pt;
+  padding-right: 1rem;
+  color: #6063E0;
 }
 
 .grids {
