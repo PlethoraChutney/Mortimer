@@ -1,28 +1,32 @@
 <template>
-<div class="grid">
-    <h2>Grid {{name}}</h2>
-    <div class="top container">
-        <div>
-            <p>Box</p><p>{{grid['Box Name']}} {{grid['Box Position']}}</p>
+<router-link
+:to="{name: 'gridView', params: {session: session, grid: name}}"
+>
+    <div class="grid">
+        <h2>Grid {{name}}</h2>
+        <div class="top container">
+            <div>
+                <p>Box</p><p>{{grid['Box Name']}} {{grid['Box Position']}}</p>
+            </div>
+            <div>
+                <p>Protein</p><p>{{grid['Protein']}} fraction {{grid['Fraction']}}, {{grid['Concentration']}} A<sub>280</sub></p>
+            </div>
         </div>
-        <div>
-            <p>Protein</p><p>{{grid['Protein']}} fraction {{grid['Fraction']}}, {{grid['Concentration']}} A<sub>280</sub></p>
+        <div class="bottom container">
+            <div>
+                <p>Grid type</p><p>{{grid['Mesh']}} mesh {{grid['Grid Type']}}</p>
+            </div>
+            <div>
+                <p>FOM</p><p>{{grid['FOM']}}</p>
+            </div>
+            <div v-if="grid['Notes']">
+                <p>Notes</p>
+                <p>{{grid['Notes']}}</p>
+            </div>
         </div>
+        <img :src="lowmag">
     </div>
-    <div class="bottom container">
-        <div>
-            <p>Grid type</p><p>{{grid['Mesh']}} mesh {{grid['Grid Type']}}</p>
-        </div>
-        <div>
-            <p>FOM</p><p>{{grid['FOM']}}</p>
-        </div>
-        <div v-if="grid['Notes']">
-            <p>Notes</p>
-            <p>{{grid['Notes']}}</p>
-        </div>
-    </div>
-    <img :src="lowmag">
-</div>
+</router-link>
 </template>
 
 <script>
@@ -32,6 +36,7 @@ export default {
     name: 'SessionSummary',
     props: {
         'name': String,
+        'session': String,
         'path': String,
         'grid': Object
     },

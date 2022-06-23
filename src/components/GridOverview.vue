@@ -9,6 +9,7 @@
       v-for="(index, grid) in grids"
       :key="index"
       :name="grid"
+      :session="session"
       :grid="grids[grid]"
       :path="path"
       />
