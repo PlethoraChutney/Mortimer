@@ -27,7 +27,7 @@ npm run build
 compiles and minifies for production.
 
 ## What does it do?
-Running `mortimer.py --process {directory}` will watch the indicated
+Running `mortimer.py process {directory}` will watch the indicated
 directory for new grids. In each grid, LMMs are aligned and saved to
 a PNG. Movies (must be named `frames_{whatever}.tif`) are roughly aligned
 using `alignframes` and converted to a small PNG. Grid information is
