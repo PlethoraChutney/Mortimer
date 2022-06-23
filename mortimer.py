@@ -13,8 +13,6 @@ import skimage
 import numpy as np
 import time
 
-test_dir = '/goliath/rawdata/BaconguisLab/posert/Screening-20220617/'
-
 alignframes = shutil.which('alignframes')
 edmont = shutil.which('edmont')
 blendmont = shutil.which('blendmont')
