@@ -84,15 +84,32 @@ export default {
         }
     },
     created() {
-        try {
-            this.path = this.store['sessions'][this.$route.params.session]['path'];
-            this.lowmag = `/mortimer/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
-            this.info = this.store['sessions'][this.$route.params.session]['grid_info'][this.$route.params.grid];
-        } catch (err) {
-            this.path = '';
-        }
-
-        this.getNewImages();
+        this.instantiateGrid();
+    },
+    mounted() {
+        window.addEventListener('keypress', e => {
+            if (e.key === 'k') {
+                this.markGrid('Keep');
+            } else if (e.key === 't') {
+                this.markGrid('Toss');
+            } else if (e.key === 'c') {
+                this.markGrid('Collect')
+            } else if (e.key === 'a') {
+                const grids = Object.keys(this.store['sessions'][this.$route.params.session]['grid_info']);
+                const currentGridIndex = grids.indexOf(this.$route.params.grid);
+                if (currentGridIndex !== 0) {
+                    const prevGrid = grids[currentGridIndex - 1];
+                    this.$router.push({name: 'gridView', params: {session: this.$route.params.session, grid: prevGrid}});
+                }
+            } else if (e.key === 'd') {
+                const grids = Object.keys(this.store['sessions'][this.$route.params.session]['grid_info']);
+                const currentGridIndex = grids.indexOf(this.$route.params.grid);
+                if (currentGridIndex !== grids.length - 1) {
+                    const nextGrid = grids[currentGridIndex + 1];
+                    this.$router.push({name: 'gridView', params: {session: this.$route.params.session, grid: nextGrid}});
+                }
+            }
+        })
     },
     watch: {
         store: {
@@ -103,9 +120,25 @@ export default {
                 this.getNewImages();
             },
             deep: true
+        },
+        "$route.params.grid": {
+            handler() {
+                this.instantiateGrid();
+            }
         }
     },
     methods: {
+        instantiateGrid() {
+            try {
+                this.path = this.store['sessions'][this.$route.params.session]['path'];
+                this.lowmag = `/mortimer/image${this.path}/grid${this.$route.params.grid}/lmm.png`;
+                this.info = this.store['sessions'][this.$route.params.session]['grid_info'][this.$route.params.grid];
+            } catch (err) {
+                this.path = '';
+            }
+
+            this.getNewImages();
+        },
         getNewImages() {
             sendRequest({
                 'action': 'check_images',
