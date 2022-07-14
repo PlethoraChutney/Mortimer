@@ -12,6 +12,7 @@ import pandas as pd
 import skimage
 import numpy as np
 import time
+from datetime import datetime
 
 test_dir = '/goliath/rawdata/BaconguisLab/posert/Screening-20220617/'
 
@@ -26,28 +27,43 @@ if any(x is None for x in [alignframes, edmont, blendmont, extractpieces]):
 
 def process_tif(tif_path):
     logging.info(f'Processing {tif_path}')
-    outfile = tif_path.replace('frames', 'aligned').replace('tif', 'mrc')
-    align_command = [
-        alignframes,
-        tif_path,
-        outfile
-    ]
-    subprocess.run(align_command)
-    logging.info('Finished aligning frames')
+    base, filename = os.path.split(tif_path)
+    outfile = f'{base}/aligned_{filename.replace(".tif", ".mrc")}'
 
-    with mrcfile.open(outfile) as f:
-        aligned = f.data
-    aligned = skimage.transform.resize(
-        aligned,
-        (aligned.shape[0] // 10, aligned.shape[1] // 10),
-        anti_aliasing = True
-    )
-    p2, p98 = np.percentile(aligned, (2, 98))
-    aligned = skimage.exposure.rescale_intensity(aligned, in_range=(p2, p98))
+    image = skimage.io.imread(tif_path)
+    if image.shape[2] == 3:
+        aligned = skimage.color.rgb2gray(image)
+        aligned = skimage.transform.resize(
+            aligned,
+            (aligned.shape[0] // 2, aligned.shape[1] // 2),
+            anti_aliasing = True
+        )
+        aligned = skimage.img_as_ubyte(aligned)
+        skimage.io.imsave(outfile.replace('mrc', 'png'), aligned)
+        logging.info(f'Saved PNG: {outfile}')
+    else:
+        align_command = [
+            alignframes,
+            tif_path,
+            outfile
+        ]
+        subprocess.run(align_command)
+        logging.info('Finished aligning frames')
 
-    aligned = skimage.img_as_ubyte(aligned)
-    skimage.io.imsave(outfile.replace('mrc', 'png'), aligned)
-    logging.info('Saved PNG')
+        with mrcfile.open(outfile) as f:
+            aligned = f.data
+        aligned = skimage.filters.gaussian(aligned, 3)
+        aligned = skimage.transform.resize(
+            aligned,
+            (aligned.shape[0] // 10, aligned.shape[1] // 10),
+            anti_aliasing = True
+        )
+        p2, p98 = np.percentile(aligned, (2, 98))
+        aligned = skimage.exposure.rescale_intensity(aligned, in_range=(p2, p98))
+
+        aligned = skimage.img_as_ubyte(aligned)
+        skimage.io.imsave(outfile.replace('mrc', 'png'), aligned)
+        logging.info(f'Saved PNG: {outfile}')
 
 class Database(object):
     def __init__(self) -> None:
@@ -81,11 +97,13 @@ class Database(object):
         try:
             info = pd.read_csv(f'{path}/grid_info.csv')
             info = info[info['Screening Grid Number'].notna()]
-            info = info.astype({'Screening Grid Number': 'int32'})
             info = info.set_index('Screening Grid Number')
             info.fillna('', inplace=True)
+            logging.debug(info)
             info = info.to_dict(orient = 'index')
             sessions[name]['grid_info'] = info
+            logging.info('Found grid info:')
+            logging.info(info)
         except FileNotFoundError:
             logging.warning('No grid info found in session root.')
 
@@ -97,14 +115,21 @@ class Database(object):
         self.sessions_db['sessions'] = session_dict
         
 
+def file_modtime(file):
+    file_mtime = os.path.getmtime(file)
+    return (datetime.now() - datetime.fromtimestamp(file_mtime)).total_seconds()
+
 class Processor(object):
-    def __init__(self, path:str, db:Database) -> None:
+    def __init__(self, path:str, db:Database, grid_base, movie_base, mont_name) -> None:
         self.path = os.path.normpath(path)
         if path[-1] == '/':
             path = path[:-1]
         self.name = os.path.split(path)[1]
+        self.grid_base = grid_base
+        self.movie_base = movie_base
+        self.mont_name = mont_name
 
-        self._grids = glob.glob(f'{self.path}/grid*')
+        self._grids = glob.glob(f'{self.path}/{self.grid_base}*')
         self.db = db
 
         if self.name not in self.db.sessions:
@@ -112,14 +137,14 @@ class Processor(object):
 
     @property
     def grids(self):
-        self._grids = glob.glob(f'{self.path}/grid*')
+        self._grids = glob.glob(f'{self.path}/{self.grid_base}*')
         return self._grids
 
     def find_new_montages(self):
         all_monts = []
         for grid in self.grids:
-            if os.path.exists(f'{grid}/lmm.mrc') and not os.path.exists(f'{grid}/aligned-lmm.mrc'):
-                all_monts.append(f'{grid}/lmm.mrc')
+            if os.path.exists(f'{grid}/{self.mont_name}') and not os.path.exists(f'{grid}/aligned-{self.mont_name}') and file_modtime(f'{grid}/{self.mont_name}') > 60:
+                all_monts.append(f'{grid}/{self.mont_name}')
 
         return all_monts
     
@@ -182,7 +207,10 @@ class Processor(object):
 
         mont_image = skimage.exposure.equalize_adapthist(mont_image, clip_limit = 0.03)
         mont_image = skimage.img_as_ubyte(mont_image)
-        skimage.io.imsave(mont.replace('.mrc', '.png'), mont_image)
+        skimage.io.imsave(
+            f'{base}/lmm.png',
+            mont_image
+        )
         logging.info('Saved PNG')
         
 
@@ -190,12 +218,14 @@ class Processor(object):
     def find_new_files(self):
         all_tifs = []
         for grid in self.grids:
-            all_tifs.extend(glob.glob(f'{grid}/frames_*.tif'))
+            all_tifs.extend(glob.glob(f'{grid}/{self.movie_base}*.tif'))
 
         tifs_to_process = []
         for tif in all_tifs:
-            potential_processed = tif.replace('frames', 'aligned').replace('.tif', '.mrc')
-            if not os.path.exists(potential_processed):
+            base, filename = os.path.split(tif)
+            potential_processed = f'{base}/aligned_{filename}'.replace('.tif', '.png')
+            logging.info(f'Checking if {potential_processed} exists...')
+            if not os.path.exists(potential_processed) and file_modtime(tif) > 60:
                 tifs_to_process.append(tif)
         
         return tifs_to_process
@@ -229,13 +259,30 @@ def utilities(args):
     if args.list_sessions:
         print('Sessions:', *db.sessions, sep = '\n  ')
 
+    if args.session_info:
+        print(db.sessions_db['sessions'][args.session_info]['grid_info'])
+
     if args.delete_session:
         db.delete_session(args.delete_session)
+
+    if args.add_note:
+        sessions = db.sessions_db['sessions']
+        session = args.add_note[0]
+        grid = args.add_note[1]
+        note = args.add_note[2]
+
+        prior_note = sessions[session]['grid_info'][grid]['Notes']
+        if not prior_note:
+            sessions[session]['grid_info'][grid]['Notes'] = note
+        else:
+            sessions[session]['grid_info'][grid]['Notes'] = prior_note + '\n' + note
+
+        db.sessions_db['sessions'] = sessions
 
 def process_session(args):
     db = Database()
 
-    session = Processor(args.path, db)
+    session = Processor(args.path, db, args.grid_base, args.movie_base, args.mont_name)
     session.process_files()
 
 parser = argparse.ArgumentParser(
@@ -274,6 +321,21 @@ process.add_argument(
     'path',
     help = 'Path of session to process'
 )
+process.add_argument(
+    '--movie-base',
+    help = 'Base name of movies. Default `frames_`',
+    default = 'frames_'
+)
+process.add_argument(
+    '--grid-base',
+    help = 'Base name for grid directories. Default `grid`. Can be empty.',
+    default = 'grid'
+)
+process.add_argument(
+    '--mont-name',
+    help = 'Name of LMM, without .mrc extension. Default `lmm`',
+    default = 'lmm'
+)
 
 utils = subparsers.add_parser(
     'utilities',
@@ -288,6 +350,15 @@ utils.add_argument(
 utils.add_argument(
     '--delete-session',
     help = 'Remove session from mortimer by name'
+)
+utils.add_argument(
+    '--session-info',
+    help = 'Get grid info for a session by name'
+)
+utils.add_argument(
+    '--add-note',
+    help = 'Add a note. {session} {grid} {note}',
+    nargs = 3
 )
 
 if __name__ == "__main__":

@@ -65,6 +65,10 @@ def api():
             image_paths = []
         else:
             image_paths = glob.glob(f'{path}/grid{rj["grid"]}/aligned_*.png')
+            # again, hacky way to deal with auto-addition of "grid" if they're
+            # not simple numbers
+            if not image_paths:
+                image_paths = glob.glob(f'{path}/{rj["grid"]}/aligned_*.png')
             image_paths = ['/mortimer/image' + x for x in image_paths]
 
         return json.dumps({'image_paths': image_paths}), 200, {'ContentType': 'application/json'}
@@ -79,5 +83,9 @@ def api():
 def image(image_path):
     if image_path[-4:] == '.png':
         image_path = image_path.replace('goliath/rawdata/BaconguisLab/', '')
+        app.logger.info(image_path)
+        # hacky way to deal with auto-addition of 'grid' to int names
+        if not os.path.exists(f'/goliath/rawdata/BaconguisLab/{image_path}'):
+            image_path = image_path.replace('grid', '')
         app.logger.info(image_path)
         return send_from_directory('/goliath/rawdata/BaconguisLab/', image_path)
