@@ -14,8 +14,6 @@ import numpy as np
 import time
 from datetime import datetime
 
-test_dir = '/goliath/rawdata/BaconguisLab/posert/Screening-20220617/'
-
 alignframes = shutil.which('alignframes')
 edmont = shutil.which('edmont')
 blendmont = shutil.which('blendmont')
