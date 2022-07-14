@@ -33,6 +33,11 @@ a PNG. Movies (must be named `frames_{whatever}.tif`) are roughly aligned
 using `alignframes` and converted to a small PNG. Grid information is
 input using `grid_info.csv`.
 
+Conventions used to be hard-coded, but can now be modified using various
+command-line arguments during processing. Check `mortimer process --help` for details.
+Additionally, if you saved aligned movies at the scope instead of raw
+frames, that will be automatically detected and handled.
+
 Serving the `app` (with gunicorn or whatever) out of `serve_mortimer.py`
 gets you access to the web interface.
 
@@ -61,7 +66,6 @@ anyone to give a shit about it. As such, there are some hacky things that
 you'd need to change if you wanted to use it. I welcome PRs to make this easier.
 
  1. Image serving relies on a hard-coded path to where I store my screening data
- 2. Grid, movie, and LMM naming conventions are all hard-coded
  3. All data are loaded immediately upon page access, meaning anything with more than a couple dozen movies will be very slow (and have huge memory demands)
  4. Screening movies are only roughly aligned and heavily binned.
  5. Users must refresh the page to see new movies/grids
