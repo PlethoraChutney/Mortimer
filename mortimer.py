@@ -331,7 +331,7 @@ process.add_argument(
 )
 process.add_argument(
     '--mont-name',
-    help = 'Name of LMM, without .mrc extension. Default `lmm`',
+    help = 'Name of LMM, with .mrc extension. Default `lmm`',
     default = 'lmm'
 )
 
