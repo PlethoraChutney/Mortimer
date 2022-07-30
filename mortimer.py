@@ -63,6 +63,23 @@ def process_tif(tif_path):
         skimage.io.imsave(outfile.replace('mrc', 'png'), aligned)
         logging.info(f'Saved PNG: {outfile}')
 
+def print_grid_info(name:str, session_info:dict) -> str:
+    print_string = []
+    print_string.append(f"Name: {name}")
+    for grid, info in session_info.items():
+        print_string.append(f'{grid}:')
+        for key, value in info.items():
+            print_string.append(f'  {key}: {value}')
+    return '\n'.join(print_string)
+
+def read_grid_info(path:str) -> dict:
+    info = pd.read_csv(f'{path}/grid_info.csv')
+    info = info[info['Screening Grid Number'].notna()]
+    info = info.astype({'Screening Grid Number': 'int32'}, errors='ignore')
+    info = info.set_index('Screening Grid Number')
+    info.fillna('', inplace=True)
+    return info.to_dict(orient = 'index')
+
 class Database(object):
     def __init__(self) -> None:
         host = os.environ['COUCHDB_HOST']
@@ -93,15 +110,10 @@ class Database(object):
         }
 
         try:
-            info = pd.read_csv(f'{path}/grid_info.csv')
-            info = info[info['Screening Grid Number'].notna()]
-            info = info.set_index('Screening Grid Number')
-            info.fillna('', inplace=True)
-            logging.debug(info)
-            info = info.to_dict(orient = 'index')
+            info = read_grid_info(path)
             sessions[name]['grid_info'] = info
-            logging.info('Found grid info:')
-            logging.info(info)
+            logging.info('Found grid info.')
+            logging.debug(print_grid_info(name, info))
         except FileNotFoundError:
             logging.warning('No grid info found in session root.')
 
@@ -258,7 +270,8 @@ def utilities(args):
         print('Sessions:', *db.sessions, sep = '\n  ')
 
     if args.session_info:
-        print(db.sessions_db['sessions'][args.session_info]['grid_info'])
+        session_info = db.sessions_db['sessions'][args.session_info]['grid_info']
+        logging.info(print_grid_info(args.session_info, session_info))
 
     if args.delete_session:
         db.delete_session(args.delete_session)
@@ -275,6 +288,13 @@ def utilities(args):
         else:
             sessions[session]['grid_info'][grid]['Notes'] = prior_note + '\n' + note
 
+        db.sessions_db['sessions'] = sessions
+
+    if args.update_data:
+        sessions = db.sessions_db['sessions']
+        path = sessions[args.update_data]['path']
+        new_info = read_grid_info(path)
+        sessions[args.update_data]['grid_info'] = new_info
         db.sessions_db['sessions'] = sessions
 
 def process_session(args):
@@ -331,8 +351,8 @@ process.add_argument(
 )
 process.add_argument(
     '--mont-name',
-    help = 'Name of LMM, with .mrc extension. Default `lmm`',
-    default = 'lmm'
+    help = 'Name of LMM, with .mrc extension. Default `lmm.mrc`',
+    default = 'lmm.mrc'
 )
 
 utils = subparsers.add_parser(
@@ -352,6 +372,10 @@ utils.add_argument(
 utils.add_argument(
     '--session-info',
     help = 'Get grid info for a session by name'
+)
+utils.add_argument(
+    '--update-data',
+    help = "Update grid data using grid_info.csv in session. Will not overwrite notes."
 )
 utils.add_argument(
     '--add-note',

@@ -1,7 +1,7 @@
 <template>
 <router-link :to="{name: 'sessionView', params: {session: name}}">
     <div class="session">
-        <h3>{{name}}</h3>
+        <h3>{{name.replaceAll('_', '-')}}</h3>
         <p>{{session.path}}</p>
     </div>
 </router-link>
@@ -25,7 +25,7 @@ div.session {
     min-height: 10rem;
     height: max-content;
     width: 100%;
-    grid-template-columns: 25% 75%;
+    grid-template-columns: 1fr max-content;
     grid-template-rows: 1fr;
     grid-template-areas: "name info";
     cursor: pointer;
@@ -36,6 +36,8 @@ div.session > h3 {
     grid-area: name;
     margin: auto;
     font-size: 48pt;
+    width: 100%;
+    text-align: left;
 }
 
 div.session > p {
