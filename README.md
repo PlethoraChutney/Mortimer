@@ -1,3 +1,6 @@
+> [!NOTE]  
+> This project is no longer maintained. Use something like CryoSPARC Live to monitor your screening solutions.
+
 # Mortimer
 
 Real-time cryoEM screening session monitoring. The goal of this project is to
